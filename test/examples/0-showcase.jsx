@@ -1,9 +1,26 @@
+// @flow
 import React from "react";
 import _ from "lodash";
-import { Responsive, WidthProvider } from "react-grid-layout";
+import Responsive from '../../lib/ResponsiveReactGridLayout';
+import WidthProvider from '../../lib/components/WidthProvider';
+import type {CompactType, Layout} from '../../lib/utils';
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
-class ShowcaseLayout extends React.Component {
+type Props = {|
+  className: string,
+  cols: {[string]: number},
+  initialLayout: Layout,
+  onLayoutChange: Function,
+  rowHeight: number,
+|};
+type State = {|
+  currentBreakpoint: string,
+  compactType: CompactType,
+  mounted: boolean,
+  layouts: {[string]: Layout}
+|};
+
+export default class ShowcaseLayout extends React.Component<Props, State> {
   static defaultProps = {
     className: "layout",
     rowHeight: 30,
@@ -42,7 +59,7 @@ class ShowcaseLayout extends React.Component {
     });
   }
 
-  onBreakpointChange = breakpoint => {
+  onBreakpointChange = (breakpoint: string) => {
     this.setState({
       currentBreakpoint: breakpoint
     });
@@ -53,11 +70,13 @@ class ShowcaseLayout extends React.Component {
     const compactType =
       oldCompactType === "horizontal"
         ? "vertical"
-        : oldCompactType === "vertical" ? null : "horizontal";
+        : oldCompactType === "vertical"
+        ? null
+        : "horizontal";
     this.setState({ compactType });
   };
 
-  onLayoutChange = (layout, layouts) => {
+  onLayoutChange = (layout: Layout, layouts: {[string]: Layout}) => {
     this.props.onLayoutChange(layout, layouts);
   };
 
@@ -67,14 +86,18 @@ class ShowcaseLayout extends React.Component {
     });
   };
 
+  onDrop = (elemParams: Object) => {
+    alert(`Element parameters: ${JSON.stringify(elemParams)}`);
+  };
+
   render() {
+    // eslint-disable-next-line no-unused-vars
+    const {initialLayout, ...props} = this.props;
     return (
       <div>
         <div>
-          Current Breakpoint: {this.state.currentBreakpoint} ({
-            this.props.cols[this.state.currentBreakpoint]
-          }{" "}
-          columns)
+          Current Breakpoint: {this.state.currentBreakpoint} (
+          {this.props.cols[this.state.currentBreakpoint]} columns)
         </div>
         <div>
           Compaction type:{" "}
@@ -85,10 +108,11 @@ class ShowcaseLayout extends React.Component {
           Change Compaction Type
         </button>
         <ResponsiveReactGridLayout
-          {...this.props}
+          {...props}
           layouts={this.state.layouts}
           onBreakpointChange={this.onBreakpointChange}
           onLayoutChange={this.onLayoutChange}
+          onDrop={this.onDrop}
           // WidthProvider option
           measureBeforeMount={false}
           // I like to have it animate on mount. If you don't, delete `useCSSTransforms` (it's default `true`)
@@ -104,8 +128,6 @@ class ShowcaseLayout extends React.Component {
   }
 }
 
-module.exports = ShowcaseLayout;
-
 function generateLayout() {
   return _.map(_.range(0, 25), function(item, i) {
     var y = Math.ceil(Math.random() * 4) + 1;
@@ -120,6 +142,6 @@ function generateLayout() {
   });
 }
 
-if (require.main === module) {
-  require("../test-hook.jsx")(module.exports);
+if (process.env.STATIC_EXAMPLES === true) {
+  import("../test-hook.jsx").then(fn => fn.default(ShowcaseLayout));
 }
